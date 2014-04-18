@@ -1,0 +1,49 @@
+{
+    "name": "beez.io",
+    "version": "0.1.0",
+    "description": "socket client plug-in for Beez",
+    "keywords": [
+        "beez",
+        "smartphone",
+        "beez.io",
+        "socket.io"
+    ],
+    "homepage": "https://github.com/masakisued/beez.io",
+    "bugs": {
+        "email": "s.masaki07@gmail.com"
+    },
+    "author": {
+        "name": "Masaki Sueda",
+        "email": "s.masaki07@gmail.co",
+        "url": "https://github.com/masakisueda"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/masakisueda"
+    },
+    "dependencies": {
+        "requirejs": ">=2.1.4",
+        "handlebars": "~1.1.0"
+    },
+    "devDependencies": {
+        "grunt": "~0.4.1",
+        "grunt-contrib-jshint": "~0.6.3",
+        "grunt-contrib-clean": "~0.5.0",
+        "grunt-contrib-requirejs": "~0.4.1",
+        "grunt-contrib-copy": "~0.4.1",
+        "grunt-exec": "~0.4.2",
+        "grunt-mkdir": "~0.1.1",
+        "grunt-jsdoc": "~0.4.1",
+        "matchdep": "~0.1.1",
+        "mocha": "~1.14.0",
+        "chai": "~1.8.0",
+        "jshint": "~2.3.0",
+        "plato": "~0.6.1",
+        "jsdoc": "~3.2.2"
+    },
+    "engines": {
+        "node": "~0.10.1",
+        "npm": "~1.1.0"
+    },
+    "private": true
+}

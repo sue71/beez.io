@@ -13,7 +13,13 @@
 
             read: {
                 id: _hash,
-                message: 'update'
+                list: [
+                    {id: _hash, message: 'read'},
+                    {id: _hash, message: 'read'},
+                    {id: _hash, message: 'read'},
+                    {id: _hash, message: 'read'},
+                    {id: _hash, message: 'read'}
+                ]
             },
 
             update: {

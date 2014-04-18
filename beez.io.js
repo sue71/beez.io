@@ -19,15 +19,35 @@
 
             function Client() {
 
+                /**
+                 * url
+                 * @type {String}
+                 */
                 this.url = '';
 
-                this.socket = null;
-
-                this.transportType = null;
-
+                /**
+                 * callback
+                 * @type {Object}
+                 */
                 this.callbacks = {};
 
-                this.handlers = {};
+                /**
+                 * handler
+                 * @type {Object}
+                 */
+                this.handler = {};
+
+                /**
+                 * transport type
+                 * @type {String}
+                 */
+                this.transportType = null;
+
+                /**
+                 * connection
+                 * @type {*}
+                 */
+                this.socket = null;
             }
 
             /**
@@ -160,30 +180,6 @@
                     this.url += ':' + options.port;
                 }
 
-                /**
-                 * callback
-                 * @type {Object}
-                 */
-                this.callbacks = {};
-
-                /**
-                 * handler
-                 * @type {Object}
-                 */
-                this.handler = {};
-
-                /**
-                 * transport type
-                 * @type {String}
-                 */
-                this.transportType = null;
-
-                /**
-                 * connection
-                 * @type {*}
-                 */
-                this.socket = null;
-
                 return this;
             };
 
@@ -258,6 +254,8 @@
                     fn = this.handler[data.name] && this.handler[data.name][data.method];
                     fn && fn();
                 }
+
+                return this;
             };
 
             /**
@@ -299,10 +297,11 @@
                     self.join(options.room, options.name);
                     // get server response
                     socket.on('message', function (res) {
-
                         logger.debug('get Server response. ', res);
-                        var data = self.parse(res);
-                        var evt = model.io.event || 'io';
+                        // invoke
+                        self.invoke(res);
+                        var data = self.parse(res),
+                            evt = model.io.event || 'io';
 
                         if (data.method) {
                             model.trigger(evt + ':' + data.method, data.body);
@@ -321,31 +320,35 @@
              * @param {function} callback
              */
             Client.prototype.send = function (method, data, namespace, callback) {
-                var message;
-                var socket = this.socket.of(namespace || '/');
+                var self = this;
 
-                if (!this.socket.socket.connected) {
-                    logger.debug('connection is closed');
-                    return this;
-                }
-                if (beez.utils.isFunction(callback)) {
-                    data._req = _.uniqueId();
-                    if (!this.callbacks[data._req]) {
-                        this.callbacks[data._req] = callback;
+                this.ready(function (sockets) {
+                    var socket = sockets.of(namespace || '/'),
+                        message;
+
+                    if (beez.utils.isFunction(callback)) {
+                        data._req = _.uniqueId();
+                        if (!self.callbacks[data._req]) {
+                            self.callbacks[data._req] = callback;
+                        }
                     }
-                }
 
-                try {
+                    try {
 
-                    message = JSON.stringify(data);
-                    socket.send(method + ':' + message);
-                    logger.debug('send', method + ':' + message);
+                        logger.debug('send', method + ':' + message);
 
-                } catch (e) {
-                    throw e;
-                }
+                        message = JSON.stringify(data);
+                        socket.send(method + ':' + message);
 
-                return this;
+                    } catch (e) {
+                        throw e;
+                    }
+
+                    return self;
+
+                });
+
+                return self;
             };
 
             /**

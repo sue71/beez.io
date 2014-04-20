@@ -22,7 +22,9 @@
                 "header": {},
                 "include": {},
                 "namespace": [
-                    "test"
+                    "test",
+                    "namespaceA",
+                    "namespaceB"
                 ]
             },
             "operation": [

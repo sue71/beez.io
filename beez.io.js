@@ -12,6 +12,34 @@
             logger = beez.getLogger('beez.io');
 
         /**
+         * get regexp by format
+         * '%s:%s:%s' > /^(.+?):(.+?):(.+?)$/
+         * @param  {String} format formatted string
+         * @example
+         * > formatedRegexp('%s:%s:%s');
+         * > /^(.+?):(.+?):(.+?)$/
+         */
+        var formatRegexp = function formatRegexp(format) {
+            format = format.replace(/[\-{}\[\]+?.,\\\^$|#\s]/g, '\\$&')
+                           .replace(/%.{1}/g, '(.+?)');
+            return new RegExp('^' + format + '$');
+        };
+
+        /**
+         * get format string
+         */
+        var formatString = function formatString() {
+            var args = Array.prototype.slice.call(arguments);
+            var str = args.pop();
+
+            for (var i = 0; i < args.length; i++) {
+                str = str.replace(/%.{1}/, args[i]);
+            }
+
+            return str;
+        };
+
+        /**
          * websocket client
          * @exports Client
          */
@@ -47,7 +75,19 @@
                  * connection
                  * @type {*}
                  */
-                this.socket = null;
+                this.sockets = null;
+
+                /**
+                 * format
+                 * @type {String}
+                 */
+                this.format = '';
+
+                /**
+                 * format regexp
+                 * @type {String}
+                 */
+                this.regexp = '';
             }
 
             /**
@@ -79,14 +119,14 @@
                 /**
                  * Fired when the connection is established and the handshake successful.
                  */
-                this.socket.on('connect', function () {
+                this.sockets.on('connect', function () {
                     logger.debug('status [' + self.transportType + ']', 'connected to [' + self.url + ']');
                 });
 
                 /**
                  * Fired when a connection is attempted, passing the transport name.
                  */
-                this.socket.on('connecting', function (transportType) {
+                this.sockets.on('connecting', function (transportType) {
                     self.transportType = transportType;
                 });
 
@@ -96,7 +136,7 @@
                  * If the tryTransportsOnConnectTimeout option is set,
                  * this only fires once all possible transports have been tried.
                  */
-                this.socket.on('connect_failed', function (e) {
+                this.sockets.on('connect_failed', function (e) {
                     logger.error('connect fail:', e);
                     self.onError(e);
                 });
@@ -107,7 +147,7 @@
                  * as some transports will fire it even under temporary,
                  * expected disconnections (such as XHR-Polling).
                  */
-                this.socket.on('close', function (e) {
+                this.sockets.on('close', function (e) {
                     logger.debug('connection closed:', e);
                     self.onClose(e);
                 });
@@ -115,7 +155,7 @@
                 /**
                  * Fired when the connection is considered disconnected.
                  */
-                this.socket.on('disconnect', function (e) {
+                this.sockets.on('disconnect', function (e) {
                     logger.error('disconnect:', e);
                     self.onClose(e);
                 });
@@ -123,21 +163,21 @@
                 /**
                  * Fired when the connection has been re-established. This only fires if the reconnect option is set.
                  */
-                this.socket.on('reconnect', function (transportType, reconnectionAttempts) {
+                this.sockets.on('reconnect', function (transportType, reconnectionAttempts) {
                     logger.warn('Reconnect:', transportType, ',', reconnectionAttempts);
                 });
 
                 /**
                  * Fired when a reconnection is attempted, passing the next delay for the next reconnection.
                  */
-                this.socket.on('reconnecting', function (reconnectionDelay, reconnectionAttempts) {
+                this.sockets.on('reconnecting', function (reconnectionDelay, reconnectionAttempts) {
                     logger.warn('reconnecting:', reconnectionDelay, ',', reconnectionAttempts);
                 });
 
                 /**
                  * Fired when all reconnection attempts have failed and we where unsuccessful in reconnecting to the server.
                  */
-                this.socket.on('reconnect_failed', function (e) {
+                this.sockets.on('reconnect_failed', function (e) {
                     logger.error('reconnect fail:', e);
                     self.onError(e);
                 });
@@ -145,7 +185,7 @@
                 /**
                  * Fired when error occured
                  */
-                this.socket.on('error', function (e) {
+                this.sockets.on('error', function (e) {
                     logger.error('error reason:', e);
                     self.onError(e);
                 });
@@ -154,7 +194,7 @@
                  * Fired when a message arrives from the server by namespace
                  */
                 _.each(options.namespace, function (name) {
-                    self.socket.of(name).on('message', function (res) {
+                    self.sockets.of(name).on('message', function (res) {
                         logger.debug('get Sever respose:', res);
                         self.invoke(res);
                     });
@@ -179,6 +219,9 @@
                 if (options.port) {
                     this.url += ':' + options.port;
                 }
+
+                this.format = options.format || '%s.%s:%s';
+                this.regexp = formatRegexp(this.format);
 
                 return this;
             };
@@ -206,7 +249,7 @@
              */
             Client.prototype.join = function (room, namespace) {
                 namespace = namespace || '/';
-                this.socket.of(namespace).emit('join', room);
+                this.sockets.of(namespace).emit('join', room);
             };
 
             /**
@@ -228,7 +271,7 @@
              */
             Client.prototype.open = function (url) {
                 logger.debug('open connection url:', url);
-                this.socket = w.io.connect(url);
+                this.sockets = w.io.connect(url);
                 return this;
             };
 
@@ -265,7 +308,7 @@
              * @param {String} [namespace]
              */
             Client.prototype.on = function (label, callback, namespace) {
-                var socket = namespace ? this.socket.of(namespace) : this.socket;
+                var socket = namespace ? this.sockets.of(namespace) : this.sockets;
                 socket.on(label, callback);
             };
 
@@ -319,7 +362,7 @@
              * @param {JSON} data
              * @param {function} callback
              */
-            Client.prototype.send = function (method, data, namespace, callback) {
+            Client.prototype.send = function (service, method, data, namespace, callback) {
                 var self = this;
 
                 this.ready(function (sockets) {
@@ -335,13 +378,14 @@
 
                     try {
 
-                        logger.debug('send', method + ':' + message);
-
-                        message = JSON.stringify(data);
-                        socket.send(method + ':' + message);
+                        var message = formatString(service, method, JSON.stringify(data), self.format);
+                        logger.debug('send', message);
+                        socket.send(message);
 
                     } catch (e) {
+
                         throw e;
+
                     }
 
                     return self;
@@ -356,12 +400,14 @@
              * @param {Function} callback
              */
             Client.prototype.ready = function (callback) {
-                if (this.socket.socket.connected) {
-                    return callback && callback(this.socket);
+                var self = this;
+
+                if (this.sockets.socket.connected) {
+                    return callback && callback(this.sockets);
                 }
 
-                this.socket.on('connect', function () {
-                    callback && callback(this.socket);
+                this.sockets.on('connect', function () {
+                    callback && callback(self.sockets);
                 });
 
                 return this;
@@ -372,35 +418,34 @@
              * @param  {Object} data
              */
             Client.prototype.parse = function parse(data) {
-                var index = data.indexOf(':');
+                var match = data.match(this.regexp);
 
-                if (index < 0) {
+                if (!match) {
                     throw new beez.Error('data format is illegal');
                 }
 
-                if (0 < index) {
-                    var handler = data.substr(0, index),
-                        service = handler.split('.')[0],
-                        method = handler.split('.')[1],
-                        body;
+                var service = match[1],
+                    method = match[2],
+                    body = match[3];
 
-                    try {
-                        body = JSON.parse(data.substr(index + 1));
-                        return {
-                            body: body,
-                            service: service,
-                            method: method
-                        };
-                    } catch (e) {
-                        throw e;
-                    }
+                try {
+                    body = JSON.parse(body);
 
+                    return {
+                        body: body,
+                        service: service,
+                        method: method
+                    };
+                } catch (e) {
+                    throw new beez.Error('parse error');
                 }
+
             };
 
+            // create crud method
             _.each(['create', 'read', 'update', 'delete'], function (method) {
                 Client.prototype[method] = function (name, data, namespace, callback) {
-                    this.send(name + '.' + method, data, namespace, callback);
+                    this.send(name, method, data, namespace, callback);
                 };
             });
 
@@ -408,7 +453,7 @@
 
         }(w));
 
-        var origSync = beez.vendor.Backbone.sync;
+        var origSync = beez.vendor.Backbone.sync; // original sync
         beez.vendor.Backbone.sync = function sync(method, model, options) {
             // this is model and has collection
             if ((method === 'delete' || method === 'create') && model.isNew() && model.collection && model.collection.io) {
@@ -416,8 +461,11 @@
             }
 
             if (!model.io || options.direct) {
+
                 origSync.apply(this, arguments);
+
             } else {
+
                 var callback = options.success || beez.none;
                 var service = options.service || model.io.name;
                 var data = options.data || {};
@@ -425,8 +473,8 @@
                 beez.manager.m.io[method](service, data, model.io.name, function (data, method) {
                     callback(data, method);
                 });
-            }
 
+            }
         };
 
         return new Client();

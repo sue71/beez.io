@@ -88,17 +88,138 @@ define(['beez.io', 'beez'], function(beezio, beez){
             self.on('io:delete', function (data) {
                 console.log('delete', data);
             });
+
+            this.called = false;
+
+            this.on('io:create', function () {
+                this.called = true;
+            }, this);
         }
 
     });
 
-    var collection, model;
+    var CollectionA = beez.Collection.extend({
+
+        io: {
+            name: 'namespaceA',
+            room: 'collection'
+        },
+
+        url: 'test',
+
+        model: Model,
+
+        midx: 'collectionA',
+
+        initialize: function initialize() {
+            var self = this,
+                idAttribute = self.idAtribute;
+
+            beez.manager.m.io.bindIo(this);
+
+            this.called = false;
+
+            this.on('io:create', function () {
+                this.called = true;
+            }, this);
+        }
+
+    });
+
+    var CollectionB = beez.Collection.extend({
+
+        io: {
+            name: 'namespaceB',
+            room: 'collection'
+        },
+
+        url: 'test',
+
+        model: Model,
+
+        midx: 'collectionB',
+
+        initialize: function initialize() {
+            var self = this,
+                idAttribute = self.idAtribute;
+
+            this.called = false;
+
+            this.on('io:create', function () {
+                this.called = true;
+            }, this);
+
+            beez.manager.m.io.bindIo(this);
+        }
+
+    });
+
+    var CollectionC = beez.Collection.extend({
+
+        io: {
+            name: 'namespaceB',
+            room: 'collection'
+        },
+
+        url: 'test',
+
+        model: Model,
+
+        midx: 'collectionC',
+
+        initialize: function initialize() {
+            var self = this,
+                idAttribute = self.idAtribute;
+
+            this.called = false;
+
+            this.on('io:create', function () {
+                this.called = true;
+            }, this);
+
+            beez.manager.m.io.bindIo(this);
+        }
+
+    });
+
+    var CollectionD = beez.Collection.extend({
+
+        io: {
+            name: 'namespaceB',
+            room: 'collectionD'
+        },
+
+        url: 'test',
+
+        model: Model,
+
+        midx: 'collectionD',
+
+        initialize: function initialize() {
+            var self = this,
+                idAttribute = self.idAtribute;
+
+            this.called = false;
+
+            this.on('io:create', function () {
+                this.called = true;
+            }, this);
+
+            beez.manager.m.io.bindIo(this);
+        }
+
+    });
+    var collection, collectionA, collectionB, collectionC, collectionD, model;
     return function () {
 
         describe('Collection', function(done){
 
             before(function (done) {
                 collection = mm.createCollection('/@', Collection);
+                collectionA = mm.createCollection('/@', CollectionA);
+                collectionB = mm.createCollection('/@', CollectionB);
+                collectionC = mm.createCollection('/@', CollectionC);
+                collectionD = mm.createCollection('/@', CollectionD);
                 done();
             });
 
@@ -122,6 +243,27 @@ define(['beez.io', 'beez'], function(beezio, beez){
                     done();
                 });
                 collection.create({}, {wait: true});
+            });
+
+            it('should only receive messages in the same namespace', function (done) {
+                var count = 2;
+                var next = function () {
+                    if (--count === 0) {
+                        expect(collectionA.called).to.equal(true);
+                        expect(collectionB.called).to.equal(false);
+                        collectionA.called = false;
+                        collectionB.called = false;
+                        done();
+                    }
+                };
+                collectionA.once('io:create', function () {
+                    next();
+                });
+                collectionB.once('io:create', function () {
+                    next();
+                });
+                setTimeout(next, 2000);
+                collectionA.create({}, {wait: true});
             });
 
         });

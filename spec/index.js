@@ -212,7 +212,7 @@ define(['beez.io', 'beez'], function(beezio, beez){
     var collection, collectionA, collectionB, collectionC, collectionD, model;
     return function () {
 
-        describe('Collection', function(done){
+        describe('Collection', function(){
 
             before(function (done) {
                 collection = mm.createCollection('/@', Collection);
@@ -311,7 +311,7 @@ define(['beez.io', 'beez'], function(beezio, beez){
         describe('Manager', function(){
 
             it('callback shoud be called', function (done) {
-                beez.manager.m.io.send('test.read', {}, 'test', function () {
+                beez.manager.m.io.send('test', 'read', {}, 'test', function () {
                     done();
                 });
             });

@@ -17,18 +17,17 @@
     "mootools"      : false,
     "dojo"          : false,
 
-    "predef"        : [ // Extra globals.
+    "predef"        : [  // Extra globals.
         //"describe",   // Used by mocha
         //"it",         // Used by mocha
         //"before",     // Used by mocha
         //"beforeEach", // Used by mocha
         //"after",      // Used by mocha
         //"afterEach"   // Used by mocha
-        //"expect"      // Used by chai(expect)
-        "define",       // Used by require.js
-        "require",      // Used by require.js
-        "requirejs",     // Used by require.js
-        "console"     // Used by native
+        "define",
+        "module",
+        "exports",
+        "console"
     ],
 
 
@@ -38,6 +37,7 @@
 
 
     // EcmaScript 5.
+    "es5"           : false,   // Allow EcmaScript 5 syntax.
     "strict"        : false,  // Require `use strict` pragma in every file.
     "globalstrict"  : false,  // Allow global "use strict" (also enables 'strict').
 
@@ -56,10 +56,10 @@
     "indent"        : 4,
     "immed"         : true,  // Require immediate invocations to be wrapped in parens e.g. `( function(){}() );`
     "latedef"       : true,   // Prohibit variable use before definition.
-    "loopfunc"      : true,   // Allow functions to be defined within loops.
+    "loopfunc"      : false,   // Allow functions to be defined within loops.
     "noarg"         : true,   // Prohibit use of `arguments.caller` and `arguments.callee`.
     "proto"         : false,   // Tolerate the __proto__ property.
-    "regexp"        : true,  // Prohibit `.` and `[^...]` in regular expressions.
+    "regexp"        : false,  // Prohibit `.` and `[^...]` in regular expressions.
     "regexdash"     : false,  // Tolerate unescaped last dash i.e. `[-...]`.
     "scripturl"     : false,   // Tolerate script-targeted URLs.
     "smarttabs"     : false,   // This option suppresses warnings about mixed tabs and spaces when the latter are used for alignmnent only.

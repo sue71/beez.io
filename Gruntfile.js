@@ -16,7 +16,7 @@
                 src: ['dist', 'release', 'docs']
             },
             jshint: {
-                src: ['s'],
+                src: ['beez.io.js'],
                 options: {
                     jshintrc: '.jshintrc',
                     jshintignore: ".jshintignore"
@@ -34,7 +34,7 @@
                 raw: {
                     files: [
                         {
-                            src: ['dist/' + beez.projectname + '/index.js'],
+                            src: ['dist/beez.io.js'],
                             dest: 'beez.io.js'
                         }
                     ]
@@ -42,7 +42,7 @@
                 min: {
                     files: [
                         {
-                            src: ['dist/' + beez.projectname + '/index.js'],
+                            src: ['dist/beez.io.min.js'],
                             dest: 'beez.io.min.js'
                         }
                     ]
@@ -50,7 +50,7 @@
             },
             jsdoc : {
                 dist : {
-                    src: ['s'],
+                    src: ['beez.io.js'],
                     options: {
                         lenient: true,
                         recurse: true,

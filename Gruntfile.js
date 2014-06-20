@@ -60,19 +60,14 @@
                     }
                 }
             },
+            uglify: {
+                default: {
+                    files: {
+                        'beez.io.min.js': ['beez.io.js']
+                    }
+                }
+            },
             exec: {
-                setver: {
-                    command: './setver',
-                    stdout: true,
-                    stderr: true
-                },
-                beez_rjs: {
-                    command: function (optimize) {
-                        return './node_modules/requirejs/bin/r.js -o build.js optimize=' + optimize;
-                    },
-                    stdout: true,
-                    stderr: true
-                },
                 spec_foundation: {
                     command: 'beez-foundation -c spec/foundation/spec.js -a beez.io:' + beez.projectdir,
                     stdout: true,
@@ -84,28 +79,6 @@
         // These plugins provide necessary tasks.
         require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
 
-        // task: foundation
-        grunt.registerTask('pre', [
-            'exec:setver'
-        ]);
-
-        /**
-         * task: build
-         */
-        grunt.registerTask('rawbuild', [
-            'pre',
-            'jshint',
-            'exec:beez_rjs:none',
-            'copy:raw'
-        ]);
-
-        grunt.registerTask('minbuild', [
-            'pre',
-            'jshint',
-            'exec:beez_rjs:uglify2',
-            'copy:min'
-        ]);
-
         // task: docs
         grunt.registerTask('docs', [
             'mkdir:docs',
@@ -115,8 +88,7 @@
         // task: defulat
         grunt.registerTask('default', [
             'clean',
-            'rawbuild',
-            'minbuild'
+            'uglify:default'
         ]);
 
         grunt.registerTask('foundation', [

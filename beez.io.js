@@ -14,7 +14,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
     (function (w) {
 
-        define('beez.io',['require','exports','module','beez'],function (require, exports, module) {
+        define(function (require, exports, module) {
 
             var beez = require('beez'),
             _ = beez.vendor._,
@@ -521,4 +521,3 @@ if (typeof module !== 'undefined' && module.exports) {
 
     })(this);
 }
-;

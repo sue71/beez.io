@@ -55,7 +55,6 @@ if (typeof module !== 'undefined' && module.exports) {
             var Client = (function (w) {
 
                 function Client() {
-
                     /**
                      * url
                      * @type {String}
@@ -84,7 +83,7 @@ if (typeof module !== 'undefined' && module.exports) {
                      * connection
                      * @type {*}
                      */
-                    this.sockets = null;
+                    this.io = null;
 
                     /**
                      * format
@@ -108,8 +107,7 @@ if (typeof module !== 'undefined' && module.exports) {
                     var self = this;
 
                     if (!w.io) {
-                        logger.error('io is not found.');
-                        self.onError('io is not found.');
+                        self.onError(new beez.Error('io is not found.'));
                     }
 
                     self.options = options;
@@ -117,37 +115,35 @@ if (typeof module !== 'undefined' && module.exports) {
 
                     if (!options.namespace) {
                         options.namespace = [''];
-                    } else if (options.namespace.indexOf('') > -1) {
-                        options.namespace.push('');
+                    } else if (options.namespace.indexOf('') < 0) {
+                        options.namespace.unshift('');
                     }
 
                     this
-                    .configure(options) // configuration
-                    .open(this.url); // start connect
-
-                    self.sockets.of(name).on('connect', function () {
-                        // override heartbeat event
-                        var context = self.sockets.socket.transport;
-                        var origOnHeartBeat = context.onHeartbeat;
-                        self.sockets.socket.transport.onHeartbeat = function (heartbeat) {
-                            logger.debug('Heartbeat!', heartbeat);
-                            origOnHeartBeat.apply(context, arguments);
-                        };
-                    });
+                    .configure(options)
+                    .open(options.namespace); // configuration
 
                     _.each(options.namespace, function (name) {
-
                         /**
                          * Fired when the connection is established and the handshake successful.
                          */
-                        self.sockets.of(name).on('connect', function () {
-                            logger.debug('status [' + self.transportType + ']', 'connected to [' + self.url + ']');
+                        self.io.of(name).on('connect', function () {
+                            logger.debug('status connect to url:', self.url, ' namespace:', '/' + name);
+                            if (name === '') {
+                                var engine = self.io.engine;
+                                var origOnHeartbeat = engine.onHeartbeat;
+                                self.io.engine.onHeartbeat = function (heartbeat) {
+                                    logger.debug('Heartbeat!', heartbeat);
+                                    origOnHeartbeat.apply(engine, arguments);
+                                    self.onHeartbeat(heartbeat);
+                                };
+                            }
                         });
 
                         /**
                          * Fired when a connection is attempted, passing the transport name.
                          */
-                        self.sockets.of(name).on('connecting', function (transportType) {
+                        self.io.of(name).on('connecting', function (transportType) {
                             logger.debug('connecting transport type:', transportType);
                             self.transportType = transportType;
                         });
@@ -158,7 +154,7 @@ if (typeof module !== 'undefined' && module.exports) {
                          * If the tryTransportsOnConnectTimeout option is set,
                          * this only fires once all possible transports have been tried.
                          */
-                        self.sockets.of(name).on('connect_failed', function (e) {
+                        self.io.of(name).on('connect_failed', function (e) {
                             logger.error('connect fail:', e);
                             self.onError(e);
                         });
@@ -169,7 +165,7 @@ if (typeof module !== 'undefined' && module.exports) {
                          * as some transports will fire it even under temporary,
                          * expected disconnections (such as XHR-Polling).
                          */
-                        self.sockets.of(name).on('close', function (e) {
+                        self.io.of(name).on('close', function (e) {
                             logger.debug('connection closed:', e);
                             self.onClose(e);
                         });
@@ -177,7 +173,7 @@ if (typeof module !== 'undefined' && module.exports) {
                         /**
                          * Fired when the connection is considered disconnected.
                          */
-                        self.sockets.of(name).on('disconnect', function (e) {
+                        self.io.of(name).on('disconnect', function (e) {
                             logger.error('disconnect:', e);
                             self.onClose(e);
                         });
@@ -185,21 +181,21 @@ if (typeof module !== 'undefined' && module.exports) {
                         /**
                          * Fired when the connection has been re-established. This only fires if the reconnect option is set.
                          */
-                        self.sockets.of(name).on('reconnect', function (transportType, reconnectionAttempts) {
+                        self.io.of(name).on('reconnect', function (transportType, reconnectionAttempts) {
                             logger.warn('reconnect:', transportType, ',', reconnectionAttempts);
                         });
 
                         /**
                          * Fired when a reconnection is attempted, passing the next delay for the next reconnection.
                          */
-                        self.sockets.of(name).on('reconnecting', function (reconnectionDelay, reconnectionAttempts) {
+                        self.io.of(name).on('reconnecting', function (reconnectionDelay, reconnectionAttempts) {
                             logger.warn('reconnecting:', reconnectionDelay, ',', reconnectionAttempts);
                         });
 
                         /**
                          * Fired when all reconnection attempts have failed and we where unsuccessful in reconnecting to the server.
                          */
-                        self.sockets.of(name).on('reconnect_failed', function (e) {
+                        self.io.of(name).on('reconnect_failed', function (e) {
                             logger.error('reconnect failed:', e);
                             self.onError(e);
                         });
@@ -207,7 +203,7 @@ if (typeof module !== 'undefined' && module.exports) {
                         /**
                          * Fired when error occured
                          */
-                        self.sockets.of(name).on('error', function (e) {
+                        self.io.of(name).on('error', function (e) {
                             logger.error('error reason:', e);
                             self.onError(e);
                         });
@@ -215,7 +211,7 @@ if (typeof module !== 'undefined' && module.exports) {
                         /**
                          * message event
                          */
-                        self.sockets.of(name).on('message', function (res) {
+                        self.io.of(name).on('message', function (res) {
                             logger.debug('get Sever respose:', res);
                             self.invoke(res);
                         });
@@ -223,7 +219,6 @@ if (typeof module !== 'undefined' && module.exports) {
 
                     return this;
                 };
-
 
                 /**
                  * configure client
@@ -248,6 +243,25 @@ if (typeof module !== 'undefined' && module.exports) {
                 };
 
                 /**
+                 * Start to connection with socket.io
+                 */
+                Client.prototype.open = function (namespace) {
+                    var self = this;
+                    self.io = w.io.Manager(this.url);
+
+                    _.each(namespace, function (nsp) {
+                        self.io.socket('/' + nsp);
+                    });
+
+                    self.io.of = function (nsp) {
+                        nsp = '/' + nsp;
+                        return self.io.nsps[nsp];
+                    };
+
+                    return self;
+                };
+
+                /**
                  * OVERRIDE ME
                  * onerror handler
                  * If you want to write original error handler
@@ -264,6 +278,14 @@ if (typeof module !== 'undefined' && module.exports) {
                 Client.prototype.onClose = beez.none;
 
                 /**
+                 * OVERRIDE ME
+                 * onheartbeat handler
+                 * If you want to write original onheartbeat handler
+                 * override this method
+                 */
+                Client.prototype.onHeartbeat = beez.none;
+
+                /**
                  * Join a room by room ID
                  * @param  {String} room - room id
                  * @param  {String} namespace - namespace of socket connection
@@ -271,7 +293,7 @@ if (typeof module !== 'undefined' && module.exports) {
                 Client.prototype.join = function (room, namespace) {
                     logger.debug('join room ', room, 'namespace: ', namespace);
                     namespace = namespace || '/';
-                    this.sockets.of(namespace).emit('join', room);
+                    this.io.of(namespace).emit('join', room);
                 };
 
                 /**
@@ -286,15 +308,6 @@ if (typeof module !== 'undefined' && module.exports) {
                         logger.warn('handler name ', handler.name, ' is already exists');
                     }
                     this.hanler[handler.name] = handler;
-                };
-
-                /**
-                 * Start to connection with socket.io
-                 */
-                Client.prototype.open = function (url) {
-                    logger.debug('open connection url:', url);
-                    this.sockets = w.io.connect(url);
-                    return this;
                 };
 
                 /**
@@ -324,7 +337,7 @@ if (typeof module !== 'undefined' && module.exports) {
                 };
 
                 Client.prototype.get = function (namespace) {
-                    return this.sockets.of(namespace);
+                    return this.io.of(namespace);
                 };
 
                 /**
@@ -334,7 +347,7 @@ if (typeof module !== 'undefined' && module.exports) {
                  * @param {String} [namespace]
                  */
                 Client.prototype.on = function (label, callback, namespace) {
-                    var socket = namespace ? this.sockets.of(namespace) : this.sockets;
+                    var socket = namespace ? this.io.of(namespace) : this.io;
                     socket.on(label, callback);
                 };
 
@@ -358,9 +371,9 @@ if (typeof module !== 'undefined' && module.exports) {
                     }
 
                     // connection is opened
-                    this.ready(function onConnection(sockets) {
+                    this.ready(function onConnection(io) {
 
-                        var socket = sockets.of(options.name);
+                        var socket = io.of(options.name);
 
                         // join the room
                         self.join(options.room, options.name);
@@ -390,9 +403,8 @@ if (typeof module !== 'undefined' && module.exports) {
                  */
                 Client.prototype.send = function (service, method, data, namespace, callback) {
                     var self = this;
-
-                    this.ready(function (sockets) {
-                        var socket = sockets.of(namespace || '/'),
+                    this.ready(function (io) {
+                        var socket = io.of(namespace || '/'),
                         message;
 
                         if (beez.utils.isFunction(callback)) {
@@ -428,15 +440,15 @@ if (typeof module !== 'undefined' && module.exports) {
                 Client.prototype.ready = function (callback) {
                     var self = this;
 
-                    if (this.sockets.socket.connected) {
-                        return callback && callback(this.sockets);
+                    if (self.io.connected) {
+                        return callback && callback(self.io);
                     }
 
-                    this.sockets.on('connect', function () {
-                        callback && callback(self.sockets);
+                    self.io.of('').on('connect', function () {
+                        callback && callback(self.io);
                     });
 
-                    return this;
+                    return self;
                 };
 
                 /**

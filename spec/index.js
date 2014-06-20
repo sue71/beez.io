@@ -8,7 +8,8 @@ define(['beez.io', 'beez'], function(beezio, beez){
     beez.manager.setup();
     beezio.setup({
         host: '0.0.0.0',
-        port: '1115'
+        port: '1115',
+        namespace: ['namespaceA', 'namespaceB', 'test']
     });
 
     var mm = beez.manager.m,
@@ -314,6 +315,13 @@ define(['beez.io', 'beez'], function(beezio, beez){
                 beez.manager.m.io.send('test', 'read', {}, 'test', function () {
                     done();
                 });
+            });
+
+            it('should fire disconnect event', function (done) {
+                beez.manager.m.io.io.of('test').on('disconnect', function () {
+                    done();
+                });
+                beez.manager.m.io.send('service', 'method', {__error__: true}, 'test');
             });
         });
     };

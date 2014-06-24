@@ -210,6 +210,27 @@ define(['beez.io', 'beez'], function(beezio, beez){
         }
 
     });
+
+    var User = beez.extend(
+        'test',
+        function () {
+            this.initialize.apply(this, arguments);
+        },
+        {
+            initialize: function initialize(name) {
+                console.log('init user handler');
+                this.name = name;
+            },
+            atack: function atack() {
+                alert('atack!');
+            },
+
+            block: function block() {
+                alert('atack!');
+            }
+        }
+    );
+
     var collection, collectionA, collectionB, collectionC, collectionD, model;
     return function () {
 
@@ -311,8 +332,28 @@ define(['beez.io', 'beez'], function(beezio, beez){
 
         describe('Manager', function(){
 
+            it('io#use', function () {
+                beez.manager.m.io.use(new User('user'));
+            });
+
+            it('io#send', function (done) {
+                beez.manager.m.io.send({
+                    service: 'user',
+                    method: 'atack',
+                    namespace: 'test',
+                    data: {}
+                }, function (res) {
+                    done();
+                });
+            });
+
             it('callback shoud be called', function (done) {
-                beez.manager.m.io.send('test', 'read', {}, 'test', function () {
+                beez.manager.m.io.send({
+                    service: 'test',
+                    method: 'read',
+                    data: {},
+                    namespace: 'test'
+                }, function () {
                     done();
                 });
             });
@@ -321,7 +362,12 @@ define(['beez.io', 'beez'], function(beezio, beez){
                 beez.manager.m.io.io.of('test').on('disconnect', function () {
                     done();
                 });
-                beez.manager.m.io.send('service', 'method', {__error__: true}, 'test');
+                beez.manager.m.io.send({
+                    service: 'service',
+                    method: 'method',
+                    data: {__error__: true},
+                    namespace: 'test'
+                });
             });
         });
     };

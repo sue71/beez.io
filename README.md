@@ -14,6 +14,11 @@
 
 ## Usage
 
+### CRUD
+
+beezのModel(Collection)経由で実行します
+
+
 ``` javascript
 
 beez.manager.setup();
@@ -50,6 +55,31 @@ var Collection = beez.Collection.extend(
 
     }
 );
+
+```
+
+### Other
+
+beezを経由しないで通信します。
+
+```javascript
+
+var handler = {
+    name: 'serviceName',
+    method1: function () {
+    }
+};
+
+beez.manager.m.io.use(handler);
+beez.manager.m.io.send({
+    service: handler.name,
+    namespace: 'test',
+    method: 'method1',
+    data: {}
+}, function () {
+    // callback
+});
+
 ```
 
 ## Method
@@ -63,13 +93,21 @@ var Collection = beez.Collection.extend(
 
 - options.namespace 登録する名前空間
 
+- options.format パースに使用するフォーマット
+
 ### open()
 socket.io通信を開始する
 
-### send(method, data, namespace, callback)
+### send(options, callback)
 socket.ioでデータを送信する
 
-### create(method, data, namespace, callback)
+#### params
+- options.service 対応するハンドラ名
+- options.method ハンドラのメソッド名
+- options.data リクエストボディ
+- options.namespace ネームスペース
+
+### create(service, data, namespace, callback)
 `create`で通信する
 
 ### read(name, data, namespace, callback)
@@ -86,6 +124,9 @@ socket.ioでデータを送信する
 
 ### parse(data)
 データをフォーマットにそって整形する
+
+### use(handler)
+レスポンスに対応したメソッドを登録します
 
 
 ## Test

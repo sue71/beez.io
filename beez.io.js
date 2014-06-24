@@ -301,13 +301,13 @@ if (typeof module !== 'undefined' && module.exports) {
                  * @param {Object} handler
                  */
                 Client.prototype.use = function (handler) {
-                    if (handler.name) {
+                    if (!handler.name) {
                         throw new beez.Error('handler name is not define');
                     }
                     if (this.handler[handler.name]) {
                         logger.warn('handler name ', handler.name, ' is already exists');
                     }
-                    this.hanler[handler.name] = handler;
+                    this.handler[handler.name] = handler;
                 };
 
                 /**
@@ -328,8 +328,8 @@ if (typeof module !== 'undefined' && module.exports) {
                         }
                     }
 
-                    if (data.handle) {
-                        fn = this.handler[data.name] && this.handler[data.name][data.method];
+                    if (data.service) {
+                        fn = this.handler[data.service] && this.handler[data.service][data.method];
                         fn && fn();
                     }
 
@@ -397,14 +397,22 @@ if (typeof module !== 'undefined' && module.exports) {
 
                 /**
                  * Send message to server
-                 * @param {String} method
-                 * @param {JSON} data
+                 *
+                 * @param {String} options.service
+                 * @param {String} options.namespace
+                 * @param {String} options.method
+                 * @param {JSON} options.data
                  * @param {function} callback
                  */
-                Client.prototype.send = function (service, method, data, namespace, callback) {
+                Client.prototype.send = function (options, callback) {
                     var self = this;
+                    var namespace = options.namespace || '/';
+                    var data = options.data;
+                    var service = options.service;
+                    var method = options.method;
+
                     this.ready(function (io) {
-                        var socket = io.of(namespace || '/'),
+                        var socket = io.of(namespace),
                         message;
 
                         if (beez.utils.isFunction(callback)) {
@@ -474,6 +482,7 @@ if (typeof module !== 'undefined' && module.exports) {
                             service: service,
                             method: method
                         };
+
                     } catch (e) {
                         throw new beez.Error('parse error');
                     }
@@ -482,8 +491,13 @@ if (typeof module !== 'undefined' && module.exports) {
 
                 // create crud method
                 _.each(['create', 'read', 'update', 'delete'], function (method) {
-                    Client.prototype[method] = function (name, data, namespace, callback) {
-                        this.send(name, method, data, namespace, callback);
+                    Client.prototype[method] = function (service, data, namespace, callback) {
+                        this.send({
+                            service: service,
+                            method: method,
+                            namespace: namespace,
+                            data: data
+                        }, callback);
                     };
                 });
 

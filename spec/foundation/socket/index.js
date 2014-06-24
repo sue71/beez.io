@@ -27,8 +27,29 @@
                 message: 'update'
             },
 
-            delete: {
+            'delete': {
                 id: _hash
+            },
+
+            user: {
+
+                atack: {
+                    test: 'id'
+                }
+
+            }
+
+
+        },
+
+        'guild': {
+
+            'item': {
+
+                atack: {
+
+                }
+
             }
 
         },
@@ -56,7 +77,11 @@
                 message: 'update'
             },
 
-            delete: {
+            'delete': {
+                id: _hash
+            },
+
+            attack: {
                 id: _hash
             }
 
@@ -89,6 +114,12 @@
                 id: _hash
             }
 
+        },
+
+        'nameSpaceA': {
+            attack: {
+                test: 'test'
+            }
         }
 
     };

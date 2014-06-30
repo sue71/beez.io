@@ -407,7 +407,7 @@ if (typeof module !== 'undefined' && module.exports) {
                 Client.prototype.send = function (options, callback) {
                     var self = this;
                     var namespace = options.namespace || '/';
-                    var data = options.data;
+                    var data = options.data || {};
                     var service = options.service;
                     var method = options.method;
 

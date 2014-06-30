@@ -324,13 +324,13 @@ if (typeof module !== 'undefined' && module.exports) {
                         callback = this.callbacks[data.body._req];
                         if (callback) {
                             delete this.callbacks[data.body._req];
-                            callback(data.body, data.method);
+                            callback(data);
                         }
                     }
 
                     if (data.service) {
                         fn = this.handler[data.service] && this.handler[data.service][data.method];
-                        fn && fn();
+                        fn && fn(data);
                     }
 
                     return this;
@@ -380,8 +380,6 @@ if (typeof module !== 'undefined' && module.exports) {
                         // get server response
                         socket.on('message', function (res) {
                             logger.debug('get Server response. ', res);
-                            // invoke
-                            self.invoke(res);
                             var data = self.parse(res),
                             evt = model.io.event || 'io';
 
@@ -522,8 +520,8 @@ if (typeof module !== 'undefined' && module.exports) {
                     var service = options.service || model.io.name;
                     var data = options.data || {};
 
-                    beez.manager.m.io[method](service, data, model.io.name, function (data, method) {
-                        callback(data, method);
+                    beez.manager.m.io[method](service, data, model.io.name, function (data) {
+                        callback(data.body);
                     });
 
                 }

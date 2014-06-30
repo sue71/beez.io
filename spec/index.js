@@ -221,12 +221,12 @@ define(['beez.io', 'beez'], function(beezio, beez){
                 console.log('init user handler');
                 this.name = name;
             },
-            atack: function atack() {
-                alert('atack!');
+            attack: function attack() {
+                alert('attack!');
             },
 
             block: function block() {
-                alert('atack!');
+                alert('block!');
             }
         }
     );
@@ -339,7 +339,7 @@ define(['beez.io', 'beez'], function(beezio, beez){
             it('io#send', function (done) {
                 beez.manager.m.io.send({
                     service: 'user',
-                    method: 'atack',
+                    method: 'attack',
                     namespace: 'test',
                     data: {}
                 }, function (res) {

@@ -33,7 +33,7 @@
 
             user: {
 
-                atack: {
+                attack: {
                     test: 'id'
                 }
 
@@ -46,7 +46,7 @@
 
             'item': {
 
-                atack: {
+                attack: {
 
                 }
 

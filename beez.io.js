@@ -330,7 +330,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
                     if (data.service) {
                         fn = this.handler[data.service] && this.handler[data.service][data.method];
-                        fn && fn(data);
+                        fn && fn.call(this.handler[data.service], data);
                     }
 
                     return this;

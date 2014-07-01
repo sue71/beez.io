@@ -123,6 +123,16 @@ if (typeof module !== 'undefined' && module.exports) {
                     .configure(options)
                     .open(options.namespace); // configuration
 
+                    var engine = self.io.engine;
+                    var origOnPacket = engine.onPacket;
+                    this.io.engine.onPacket = function () {
+                        try {
+                            origOnPacket.apply(engine, arguments);
+                        } catch (e) {
+                            logger.error(e);
+                        }
+                    };
+
                     _.each(options.namespace, function (name) {
                         /**
                          * Fired when the connection is established and the handshake successful.

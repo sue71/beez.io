@@ -184,7 +184,7 @@ if (typeof module !== 'undefined' && module.exports) {
                          * Fired when the connection is considered disconnected.
                          */
                         self.io.of(name).on('disconnect', function (e) {
-                            logger.error('disconnect:', e);
+                            logger.warn('disconnect:', e);
                             self.onClose(e);
                         });
 
@@ -228,6 +228,16 @@ if (typeof module !== 'undefined' && module.exports) {
                     });
 
                     return this;
+                };
+
+                Client.prototype.disconnect = function (name) {
+                    name = name || '';
+
+                    var self = this;
+                    var socket = self.io.of(name);
+
+                    socket.off();
+                    socket.disconnect();
                 };
 
                 /**
@@ -390,10 +400,14 @@ if (typeof module !== 'undefined' && module.exports) {
                         // get server response
                         socket.on('message', function (res) {
                             logger.debug('get Server response. ', res);
+
+                            // invoke
+                            self.invoke(res);
                             var data = self.parse(res),
                             evt = model.io.event || 'io';
 
                             if (data.method) {
+                                console.log(evt + ':' + data.method);
                                 model.trigger(evt + ':' + data.method, data.body);
                             }
 
@@ -533,7 +547,6 @@ if (typeof module !== 'undefined' && module.exports) {
                     beez.manager.m.io[method](service, data, model.io.name, function (data) {
                         callback(data.body);
                     });
-
                 }
             };
 

@@ -372,6 +372,17 @@ if (typeof module !== 'undefined' && module.exports) {
                 };
 
                 /**
+                 * Remove socket.io event handler
+                 * @param {String} label
+                 * @param {function} callback
+                 * @param {String} [namespace]
+                 */
+                Client.prototype.off = function (label, callback, namespace) {
+                    var socket = namespace ? this.io.of(namespace) : this.io;
+                    socket.off(label, callback);
+                };
+
+                /**
                  * bind socket event to model
                  * @param  {Model|Collection} model
                  */
